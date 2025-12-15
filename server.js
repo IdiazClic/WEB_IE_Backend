@@ -1,68 +1,47 @@
-// Cargar la configuración de la BD
-const db = require('./config/db.config');
+// C:\Users\Usuario\WEB_IE\backend\server.js
+
+require('dotenv').config(); // Cargar variables de entorno (como VITE_API_URL)
 const express = require('express');
 const cors = require('cors');
 
-// 1. IMPORTAR la ruta de Noticias
-const noticiasRoutes = require('./routes/noticias.routes'); // ¡Añadir esta línea!
-const configRoutes = require('./routes/config.routes');
-const documentosRoutes = require('./routes/documentos.routes'); // <-- ¡Importar!
-const contactoRoutes = require('./routes/contacto.routes'); // <-- ¡Importar!
-
-// Cargar las variables de entorno
-require('dotenv').config(); 
+// Importar rutas
+const noticiasRoutes = require('./routes/noticias.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors()); // Para permitir peticiones desde el frontend
-app.use(express.json()); // Para manejar datos JSON en las peticiones
+// Configuración de CORS
+// Permite que tu frontend de Render (o local) acceda a esta API
+const corsOptions = {
+    origin: '*', // 🚨 ADVERTENCIA: Cambia '*' por la URL de tu frontend en producción
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204
+};
 
-// 2. USAR la ruta de Noticias con el prefijo /api/noticias
-app.use('/api/noticias', noticiasRoutes); // ¡Añadir esta línea!
-app.use('/api/config', configRoutes);
-app.use('/api/documentos', documentosRoutes); // <-- ¡Usar la nueva ruta!
-app.use('/api/contacto', contactoRoutes); // <-- ¡Usar la nueva ruta!
+app.use(cors(corsOptions));
+app.use(express.json()); // Middleware para parsear bodies JSON
+app.use(express.urlencoded({ extended: true })); // Middleware para datos de formularios
 
-// ---------------------------------------------
-// RUTA DE PRUEBA: Verificar Conexión y Servidor
-// ---------------------------------------------
-app.get('/', async (req, res) => {
-    try {
-        // Ejecutamos una consulta simple para probar la conexión
-        const [rows] = await db.query('SELECT 1 + 1 AS solution');
-        
-        // Si no hay error, la conexión es exitosa
-        res.status(200).json({
-            message: '✅ Conexión a MySQL y Servidor Express exitosos!',
-            result: rows[0].solution
-        });
+// -----------------------------------------------------
+// 🛑 CRÍTICO: SE ELIMINÓ EL CÓDIGO DE CONEXIÓN A MySQL
+// -----------------------------------------------------
 
-    } catch (error) {
-        // Si hay un error, lo mostramos
-        console.error("Error de conexión a la BD:", error);
-        res.status(500).json({
-            message: '❌ Error al conectar a MySQL. Revisa tus credenciales en .env',
-            error: error.message
-        });
-    }
+// Rutas de la API
+app.get('/', (req, res) => {
+    // Respuesta simple para verificar que el servidor está funcionando en Render
+    res.status(200).send({ message: "Servidor de la WEB_IE API está activo." });
 });
 
-// Middleware
-app.use(cors()); 
-app.use(express.json()); 
+app.use('/api', noticiasRoutes); // Rutas para /api/noticias
 
-// Rutas
-app.use('/api/noticias', noticiasRoutes); 
-app.use('/api/config', configRoutes); // <-- ¡Usar la nueva ruta!
+// Manejador de errores generales
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Algo salió mal en el servidor!');
+});
 
-// ... (inicio del servidor)
-
-// ---------------------------------------------
-// INICIO DEL SERVIDOR
-// ---------------------------------------------
+// Inicio del Servidor
 app.listen(PORT, () => {
     console.log(`Servidor de la WEB_IE corriendo en puerto ${PORT}`);
 });
-
